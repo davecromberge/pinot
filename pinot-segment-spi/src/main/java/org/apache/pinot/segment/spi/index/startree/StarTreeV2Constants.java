@@ -54,6 +54,8 @@ public class StarTreeV2Constants {
     public static final String FUNCTION_TYPE = "function.type";
     public static final String COLUMN_NAME = "column.name";
     public static final String COMPRESSION_CODEC = "compression.codec";
+    public static final String VIRTUAL_AGGREGATION_COUNT = "virtual.count";
+    public static final String VIRTUAL_AGGREGATION_PREFIX = "virtual.";
 
     public static String getStarTreePrefix(int index) {
       return STAR_TREE_PREFIX + index;

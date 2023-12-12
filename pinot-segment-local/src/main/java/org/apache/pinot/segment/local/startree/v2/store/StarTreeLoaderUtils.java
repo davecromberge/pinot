@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.pinot.segment.local.aggregator.ValueAggregatorFactory;
 import org.apache.pinot.segment.local.segment.index.forward.ForwardIndexReaderFactory;
 import org.apache.pinot.segment.local.segment.index.readers.forward.FixedBitSVForwardIndexReaderV2;
@@ -65,6 +66,7 @@ public class StarTreeLoaderUtils {
       StarTreeV2Metadata starTreeMetadata = starTreeMetadataList.get(i);
       int numDocs = starTreeMetadata.getNumDocs();
       Map<String, DataSource> dataSourceMap = new HashMap<>();
+      Map<String, String> virtualFunctionsMap = new HashMap<>();
 
       // Load dimension forward indexes
       for (String dimension : starTreeMetadata.getDimensionsSplitOrder()) {
@@ -77,6 +79,8 @@ public class StarTreeLoaderUtils {
       }
 
       // Load metric (function-column pair) forward indexes
+      Map<AggregationFunctionColumnPair, Set<AggregationFunctionColumnPair>> virtualFunctionColumnPairsMap =
+          starTreeMetadata.getVirtualFunctionColumnPairsMap();
       for (AggregationFunctionColumnPair functionColumnPair : starTreeMetadata.getFunctionColumnPairs()) {
         String metric = functionColumnPair.toColumnName();
         PinotDataBuffer forwardIndexDataBuffer = indexReader.getIndexFor(metric, StandardIndexes.forward());
@@ -85,6 +89,17 @@ public class StarTreeLoaderUtils {
         ForwardIndexReader<?> forwardIndex =
             ForwardIndexReaderFactory.createRawIndexReader(forwardIndexDataBuffer, dataType.getStoredType(), true);
         dataSourceMap.put(metric, new StarTreeDataSource(fieldSpec, numDocs, forwardIndex, null));
+
+        Set<AggregationFunctionColumnPair> virtualFunctions = virtualFunctionColumnPairsMap.get(functionColumnPair);
+        if (virtualFunctions != null) {
+          for (AggregationFunctionColumnPair virtualFunctionColumnPair : virtualFunctions) {
+            String vMetric = virtualFunctionColumnPair.toColumnName();
+            DataType vDataType =
+                ValueAggregatorFactory.getAggregatedValueType(virtualFunctionColumnPair.getFunctionType());
+            FieldSpec vFieldSpec = new MetricFieldSpec(vMetric, vDataType);
+            dataSourceMap.put(vMetric, new StarTreeDataSource(vFieldSpec, numDocs, forwardIndex, null));
+          }
+        }
       }
 
       starTrees.add(new StarTreeV2() {

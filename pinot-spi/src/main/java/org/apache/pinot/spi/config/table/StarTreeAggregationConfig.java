@@ -20,6 +20,8 @@ package org.apache.pinot.spi.config.table;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Collections;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.apache.pinot.spi.config.BaseJsonConfig;
 import org.apache.pinot.spi.config.table.FieldConfig.CompressionCodec;
@@ -29,14 +31,18 @@ public class StarTreeAggregationConfig extends BaseJsonConfig {
   private final String _columnName;
   private final String _aggregationFunction;
   private final CompressionCodec _compressionCodec;
+  private final List<String> _virtualAggregationFunctions;
 
   @JsonCreator
   public StarTreeAggregationConfig(@JsonProperty(value = "columnName", required = true) String columnName,
       @JsonProperty(value = "aggregationFunction", required = true) String aggregationFunction,
-      @JsonProperty(value = "compressionCodec") @Nullable CompressionCodec compressionCodec) {
+      @JsonProperty(value = "compressionCodec") @Nullable CompressionCodec compressionCodec,
+      @JsonProperty(value = "virtualAggregationFunctions") @Nullable List<String> virtualAggregationFunctions) {
     _columnName = columnName;
     _aggregationFunction = aggregationFunction;
     _compressionCodec = compressionCodec != null ? compressionCodec : CompressionCodec.PASS_THROUGH;
+    _virtualAggregationFunctions =
+        virtualAggregationFunctions != null ? virtualAggregationFunctions : Collections.emptyList();
   }
 
   public String getColumnName() {
@@ -49,5 +55,9 @@ public class StarTreeAggregationConfig extends BaseJsonConfig {
 
   public CompressionCodec getCompressionCodec() {
     return _compressionCodec;
+  }
+
+  public List<String> getVirtualAggregationFunctions() {
+    return _virtualAggregationFunctions;
   }
 }

@@ -85,7 +85,8 @@ public class StarTreeV2BuilderConfig {
             AggregationFunctionColumnPair.fromAggregationConfig(aggregationConfig);
         ChunkCompressionType compressionType =
             ChunkCompressionType.valueOf(aggregationConfig.getCompressionCodec().name());
-        aggregationSpecs.put(aggregationFunctionColumnPair, new AggregationSpec(compressionType));
+        List<String> virtualFunctions = aggregationConfig.getVirtualAggregationFunctions();
+        aggregationSpecs.put(aggregationFunctionColumnPair, new AggregationSpec(compressionType, virtualFunctions));
       }
     }
 
@@ -226,6 +227,15 @@ public class StarTreeV2BuilderConfig {
           functionColumnPair.getFunctionType().getName());
       metadataProperties.setProperty(prefix + MetadataKey.COLUMN_NAME, functionColumnPair.getColumn());
       metadataProperties.setProperty(prefix + MetadataKey.COMPRESSION_CODEC, aggregationSpec.getCompressionType());
+
+      metadataProperties.setProperty(prefix + MetadataKey.VIRTUAL_AGGREGATION_COUNT,
+          aggregationSpec.getVirtualAggregationFunctions().size());
+      int virtualIndex = 0;
+      for (String virtualAggregationFunction : aggregationSpec.getVirtualAggregationFunctions()) {
+        String virtualPrefix = prefix + MetadataKey.VIRTUAL_AGGREGATION_PREFIX + virtualIndex + '.';
+        metadataProperties.setProperty(virtualPrefix + MetadataKey.FUNCTION_TYPE, virtualAggregationFunction);
+      }
+
       index++;
     }
     metadataProperties.setProperty(MetadataKey.MAX_LEAF_RECORDS, _maxLeafRecords);

@@ -18,20 +18,29 @@
  */
 package org.apache.pinot.segment.spi.index.startree;
 
+import java.util.Collections;
+import java.util.List;
 import org.apache.pinot.segment.spi.compression.ChunkCompressionType;
 
 
 public class AggregationSpec {
-  public static final AggregationSpec DEFAULT = new AggregationSpec(ChunkCompressionType.PASS_THROUGH);
+  public static final AggregationSpec DEFAULT =
+      new AggregationSpec(ChunkCompressionType.PASS_THROUGH, Collections.emptyList());
 
   private final ChunkCompressionType _compressionType;
+  private final List<String> _virtualAggregationFunctions;
 
-  public AggregationSpec(ChunkCompressionType compressionType) {
+  public AggregationSpec(ChunkCompressionType compressionType, List<String> virtualAggregationFunctions) {
     _compressionType = compressionType;
+    _virtualAggregationFunctions = virtualAggregationFunctions;
   }
 
   public ChunkCompressionType getCompressionType() {
     return _compressionType;
+  }
+
+  public List<String> getVirtualAggregationFunctions() {
+    return _virtualAggregationFunctions;
   }
 
   @Override
@@ -43,11 +52,14 @@ public class AggregationSpec {
       return false;
     }
     AggregationSpec that = (AggregationSpec) o;
-    return _compressionType == that._compressionType;
+    return _compressionType == that._compressionType && _virtualAggregationFunctions.equals(
+        that._virtualAggregationFunctions);
   }
 
   @Override
   public int hashCode() {
-    return _compressionType.hashCode();
+    int result = _compressionType.hashCode();
+    result = 31 * result + _virtualAggregationFunctions.hashCode();
+    return result;
   }
 }
