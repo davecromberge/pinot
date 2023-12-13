@@ -49,8 +49,9 @@ public class AggregationSpec {
       return false;
     }
     AggregationSpec that = (AggregationSpec) o;
-    return _compressionType == that._compressionType && _valueAggregationFunctionTypeName.equalsIgnoreCase(
-        that._valueAggregationFunctionTypeName);
+    return _compressionType == that._compressionType && (_valueAggregationFunctionTypeName == null
+        ? that._valueAggregationFunctionTypeName == null
+        : _valueAggregationFunctionTypeName.equalsIgnoreCase(that._valueAggregationFunctionTypeName));
   }
 
   @Override
