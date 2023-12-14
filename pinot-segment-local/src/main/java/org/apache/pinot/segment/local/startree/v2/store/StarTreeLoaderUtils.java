@@ -78,6 +78,12 @@ public class StarTreeLoaderUtils {
 
       // Load metric (function-column pair) forward indexes
       for (AggregationFunctionColumnPair functionColumnPair : starTreeMetadata.getFunctionColumnPairs()) {
+        // If there is already a ForwardIndexReader in memory that supports the functionColumnPair, do not load another.
+        AggregationFunctionColumnPair valueFunction =
+            AggregationFunctionColumnPair.resolveToValueType(functionColumnPair);
+        if (dataSourceMap.containsKey(valueFunction.toColumnName())) {
+          continue;
+        }
         String metric = functionColumnPair.toColumnName();
         PinotDataBuffer forwardIndexDataBuffer = indexReader.getIndexFor(metric, StandardIndexes.forward());
         DataType dataType = ValueAggregatorFactory.getAggregatedValueType(functionColumnPair.getFunctionType());
@@ -100,7 +106,16 @@ public class StarTreeLoaderUtils {
 
         @Override
         public DataSource getDataSource(String columnName) {
-          return dataSourceMap.get(columnName);
+          DataSource result = dataSourceMap.get(columnName);
+          // Some query columnNames could be supported by the underlying value aggregation type; do a secondary lookup
+          if (result == null) {
+            AggregationFunctionColumnPair originalColumnPair =
+                AggregationFunctionColumnPair.fromColumnName(columnName);
+            AggregationFunctionColumnPair valueColumnPair =
+                AggregationFunctionColumnPair.resolveToValueType(originalColumnPair);
+            return dataSourceMap.get(valueColumnPair.toColumnName());
+          }
+          return result;
         }
 
         @Override

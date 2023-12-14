@@ -21,6 +21,7 @@ package org.apache.pinot.segment.local.startree.v2.builder;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,6 +58,7 @@ public class StarTreeV2BuilderConfig {
   private final List<String> _dimensionsSplitOrder;
   private final Set<String> _skipStarNodeCreationForDimensions;
   private final TreeMap<AggregationFunctionColumnPair, AggregationSpec> _aggregationSpecs;
+  private final TreeMap<AggregationFunctionColumnPair, AggregationSpec> _uniqueAggregationSpecs;
   private final int _maxLeafRecords;
 
   public static StarTreeV2BuilderConfig fromIndexConfig(StarTreeIndexConfig indexConfig) {
@@ -85,7 +87,8 @@ public class StarTreeV2BuilderConfig {
             AggregationFunctionColumnPair.fromAggregationConfig(aggregationConfig);
         ChunkCompressionType compressionType =
             ChunkCompressionType.valueOf(aggregationConfig.getCompressionCodec().name());
-        aggregationSpecs.put(aggregationFunctionColumnPair, new AggregationSpec(compressionType));
+        aggregationSpecs.put(aggregationFunctionColumnPair,
+            new AggregationSpec(compressionType, aggregationConfig.getValueAggregationFunction()));
       }
     }
 
@@ -187,6 +190,7 @@ public class StarTreeV2BuilderConfig {
     _skipStarNodeCreationForDimensions = skipStarNodeCreationForDimensions;
     _aggregationSpecs = aggregationSpecs;
     _maxLeafRecords = maxLeafRecords;
+    _uniqueAggregationSpecs = deduplicateAggregationSpecs(aggregationSpecs);
   }
 
   public List<String> getDimensionsSplitOrder() {
@@ -201,12 +205,37 @@ public class StarTreeV2BuilderConfig {
     return _aggregationSpecs;
   }
 
-  public Set<AggregationFunctionColumnPair> getFunctionColumnPairs() {
-    return _aggregationSpecs.keySet();
+  public TreeMap<AggregationFunctionColumnPair, AggregationSpec> getUniqueAggregationSpecs() {
+    return _uniqueAggregationSpecs;
   }
 
   public int getMaxLeafRecords() {
     return _maxLeafRecords;
+  }
+
+  private static TreeMap<AggregationFunctionColumnPair, AggregationSpec> deduplicateAggregationSpecs(TreeMap<AggregationFunctionColumnPair, AggregationSpec> aggregationSpecs) {
+    HashSet<AggregationFunctionColumnPair> uniqueColumnPairs = new HashSet<>();
+    TreeMap<AggregationFunctionColumnPair, AggregationSpec> filteredMap = new TreeMap<>();
+    for (Map.Entry<AggregationFunctionColumnPair, AggregationSpec> entry : aggregationSpecs.entrySet()) {
+      AggregationFunctionColumnPair originalColumnPair = entry.getKey();
+      AggregationSpec spec = entry.getValue();
+
+      AggregationFunctionColumnPair resolvedColumnPair;
+      String valueAggregationFunctionTypeName = spec.getValueAggregationFunctionTypeName();
+      if (valueAggregationFunctionTypeName == null) {
+        resolvedColumnPair = AggregationFunctionColumnPair.resolveToValueType(originalColumnPair);
+      } else {
+        resolvedColumnPair = new AggregationFunctionColumnPair(
+            AggregationFunctionType.getAggregationFunctionType(valueAggregationFunctionTypeName),
+            originalColumnPair.getColumn());
+      }
+
+      if (!uniqueColumnPairs.contains(resolvedColumnPair)) {
+        filteredMap.put(resolvedColumnPair, spec);
+        uniqueColumnPairs.add(resolvedColumnPair);
+      }
+    }
+    return filteredMap;
   }
 
   /**

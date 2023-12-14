@@ -94,7 +94,7 @@ public class StarTreeIndexSeparatorTest {
     assertTrue(files.contains(STAR_TREE_INDEX_FILE_NAME));
     _builderConfig.getDimensionsSplitOrder()
         .forEach(dimension -> assertTrue(files.contains(dimension + UNSORTED_SV_FORWARD_INDEX_FILE_EXTENSION)));
-    _builderConfig.getFunctionColumnPairs()
+    _builderConfig.getUniqueAggregationSpecs().keySet()
         .forEach(dimension -> assertTrue(files.contains(dimension + RAW_SV_FORWARD_INDEX_FILE_EXTENSION)));
     FileUtils.forceDelete(tempDir);
   }

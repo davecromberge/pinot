@@ -69,7 +69,7 @@ public class StarTreeIndexCombiner implements Closeable {
     }
 
     // Write metric (function-column pair) indexes
-    for (AggregationFunctionColumnPair functionColumnPair : builderConfig.getFunctionColumnPairs()) {
+    for (AggregationFunctionColumnPair functionColumnPair : builderConfig.getUniqueAggregationSpecs().keySet()) {
       String metric = functionColumnPair.toColumnName();
       File metricIndexFile =
           new File(starTreeIndexDir, metric + V1Constants.Indexes.RAW_SV_FORWARD_INDEX_FILE_EXTENSION);
