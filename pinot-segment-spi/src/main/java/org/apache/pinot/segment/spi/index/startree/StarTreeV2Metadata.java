@@ -91,7 +91,12 @@ public class StarTreeV2Metadata {
   }
 
   public boolean containsFunctionColumnPair(AggregationFunctionColumnPair functionColumnPair) {
-    return _aggregationSpecs.containsKey(functionColumnPair);
+    boolean containsColumnPair = _aggregationSpecs.containsKey(functionColumnPair);
+    if (!containsColumnPair) {
+      AggregationFunctionColumnPair valuePair = AggregationFunctionColumnPair.resolveToValueType(functionColumnPair);
+      containsColumnPair = _aggregationSpecs.containsKey(valuePair);
+    }
+    return containsColumnPair;
   }
 
   public int getMaxLeafRecords() {
